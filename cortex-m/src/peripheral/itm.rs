@@ -5,7 +5,7 @@
 use core::cell::UnsafeCell;
 use core::ptr;
 
-use volatile_register::{RO, RW, WO};
+use crate::vtypes::{RO, RW, WO};
 
 use crate::peripheral::ITM;
 use bitfield::bitfield;

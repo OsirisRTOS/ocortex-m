@@ -1,8 +1,8 @@
 //! Implementation Control Block
 
 #[cfg(any(armv7m, armv8m, native))]
-use volatile_register::RO;
-use volatile_register::RW;
+use crate::vtypes::RO;
+use crate::vtypes::RW;
 
 /// Register block
 #[repr(C)]

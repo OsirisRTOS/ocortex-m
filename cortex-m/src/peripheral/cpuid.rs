@@ -1,8 +1,8 @@
 //! CPUID
 
-use volatile_register::RO;
+use crate::vtypes::RO;
 #[cfg(not(armv6m))]
-use volatile_register::RW;
+use crate::vtypes::RW;
 
 #[cfg(not(armv6m))]
 use crate::peripheral::CPUID;

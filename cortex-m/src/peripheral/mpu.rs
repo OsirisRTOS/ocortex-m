@@ -1,6 +1,6 @@
 //! Memory Protection Unit
 
-use volatile_register::{RO, RW};
+use crate::vtypes::{RO, RW};
 
 /// Register block for ARMv7-M
 #[cfg(not(armv8m))]

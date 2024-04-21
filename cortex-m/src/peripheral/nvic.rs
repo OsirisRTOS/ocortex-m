@@ -1,8 +1,8 @@
 //! Nested Vector Interrupt Controller
 
-use volatile_register::RW;
+use crate::vtypes::RW;
 #[cfg(not(armv6m))]
-use volatile_register::{RO, WO};
+use crate::vtypes::{RO, WO};
 
 use crate::interrupt::InterruptNumber;
 use crate::peripheral::NVIC;

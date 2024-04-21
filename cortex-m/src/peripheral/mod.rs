@@ -163,13 +163,12 @@ impl Peripherals {
     /// Returns all the core peripherals *once*
     #[inline]
     pub fn take() -> Option<Self> {
-        critical_section::with(|_| {
-            if unsafe { TAKEN } {
-                None
-            } else {
-                Some(unsafe { Peripherals::steal() })
-            }
-        })
+        //CHANGED: OsirisRTOS, TODO remove this design.
+        if unsafe { TAKEN } {
+            None
+        } else {
+            Some(unsafe { Peripherals::steal() })
+        }
     }
 
     /// Unchecked version of `Peripherals::take`

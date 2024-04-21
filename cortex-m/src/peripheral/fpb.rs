@@ -2,7 +2,7 @@
 //!
 //! *NOTE* Not available on Armv6-M.
 
-use volatile_register::{RO, RW, WO};
+use crate::vtypes::{RO, RW, WO};
 
 /// Register block
 #[repr(C)]

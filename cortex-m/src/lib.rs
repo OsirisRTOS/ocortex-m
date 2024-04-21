@@ -65,15 +65,6 @@ pub mod interrupt;
 pub mod itm;
 pub mod peripheral;
 pub mod register;
+pub mod vtypes;
 
 pub use crate::peripheral::Peripherals;
-
-#[cfg(all(cortex_m, feature = "critical-section-single-core"))]
-mod critical_section;
-
-/// Used to reexport items for use in macros. Do not use directly.
-/// Not covered by semver guarantees.
-#[doc(hidden)]
-pub mod _export {
-    pub use critical_section;
-}

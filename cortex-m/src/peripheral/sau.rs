@@ -8,8 +8,8 @@
 //! For reference please check the section B8.3 of the Armv8-M Architecture Reference Manual.
 
 use crate::peripheral::SAU;
+use crate::vtypes::{RO, RW};
 use bitfield::bitfield;
-use volatile_register::{RO, RW};
 
 /// Register block
 #[repr(C)]

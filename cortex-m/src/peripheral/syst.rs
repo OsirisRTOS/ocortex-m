@@ -1,6 +1,6 @@
 //! SysTick: System Timer
 
-use volatile_register::{RO, RW};
+use crate::vtypes::{RO, RW};
 
 use crate::peripheral::SYST;
 

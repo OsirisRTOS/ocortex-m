@@ -2,7 +2,7 @@
 //!
 //! *NOTE* Available only on targets with a Floating Point Unit (FPU) extension.
 
-use volatile_register::{RO, RW};
+use crate::vtypes::{RO, RW};
 
 /// Register block
 #[repr(C)]

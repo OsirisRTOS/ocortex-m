@@ -1,8 +1,8 @@
 //! Data Watchpoint and Trace unit
 
 #[cfg(not(armv6m))]
-use volatile_register::WO;
-use volatile_register::{RO, RW};
+use crate::vtypes::WO;
+use crate::vtypes::{RO, RW};
 
 use crate::peripheral::DWT;
 use bitfield::bitfield;

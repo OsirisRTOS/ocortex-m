@@ -2,7 +2,7 @@
 
 use core::ptr;
 
-use volatile_register::RW;
+use crate::vtypes::RW;
 
 #[cfg(not(armv6m))]
 use super::cpuid::CsselrCacheType;

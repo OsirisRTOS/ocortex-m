@@ -1,6 +1,6 @@
 //! Cortex-M7 TCM and Cache access control.
 
-use volatile_register::RW;
+use crate::vtypes::RW;
 
 /// Register block
 #[repr(C)]

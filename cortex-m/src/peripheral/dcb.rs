@@ -1,6 +1,6 @@
 //! Debug Control Block
 
-use volatile_register::{RW, WO};
+use crate::vtypes::{RW, WO};
 
 use crate::peripheral::DCB;
 use core::ptr;

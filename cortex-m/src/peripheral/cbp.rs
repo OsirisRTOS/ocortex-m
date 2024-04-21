@@ -2,7 +2,7 @@
 //!
 //! *NOTE* Not available on Armv6-M.
 
-use volatile_register::WO;
+use crate::vtypes::WO;
 
 use crate::peripheral::CBP;
 
