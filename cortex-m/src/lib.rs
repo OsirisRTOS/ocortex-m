@@ -66,5 +66,3 @@ pub mod itm;
 pub mod peripheral;
 pub mod register;
 pub mod vtypes;
-
-pub use crate::peripheral::Peripherals;
