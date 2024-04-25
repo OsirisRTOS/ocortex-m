@@ -1,4 +1,3 @@
 *.org
 .#*
-Cargo.lock
 target
