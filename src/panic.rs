@@ -4,7 +4,7 @@
 use core::panic::PanicInfo;
 
 #[panic_handler]
-#[cfg(all(feature = "panic_semih", target_arch = "arm"))]
+#[cfg(all(feature = "panic-semih", target_arch = "arm"))]
 fn panic(info: &PanicInfo) -> ! {
     #[cfg(not(feature = "exit"))]
     use crate::asm;
@@ -35,7 +35,7 @@ fn panic(info: &PanicInfo) -> ! {
 
 #[panic_handler]
 #[cfg(all(not(test), not(doctest)))]
-#[cfg(all(feature = "panic_itm", target_arch = "arm"))]
+#[cfg(all(feature = "panic-itm", target_arch = "arm"))]
 fn panic(info: &PanicInfo) -> ! {
     use crate::interrupt;
     use crate::iprintln;
@@ -58,7 +58,7 @@ fn panic(info: &PanicInfo) -> ! {
 }
 
 #[panic_handler]
-#[cfg(all(not(feature = "panic_semih"), not(feature = "panic_itm")))]
+#[cfg(all(not(feature = "panic-semih"), not(feature = "panic-itm")))]
 fn panic(_: &PanicInfo) -> ! {
     loop {}
 }

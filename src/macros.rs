@@ -23,6 +23,43 @@ macro_rules! iprintln {
     };
 }
 
+/// Macro for sending a formatted string to the host's standard output, using semi-hosting, with a newline.
+#[macro_export]
+macro_rules! hprintln {
+    () => {
+        {
+            use core::fmt::Write;
+            $crate::semih::hio::hstdout().map(|mut hstdout| hstdout.write_str("\n"))
+        }
+
+    };
+    ($fmt:expr) => {
+        {
+            use core::fmt::Write;
+
+            match $crate::semih::hio::hstdout()
+            .map(|mut hstdout| hstdout.write_fmt(format_args!(concat!($fmt, "\n"))))
+            {
+                Ok(result) => result.map_err(|x| x.into()),
+                Err(err) => Err(err),
+            }
+        }
+
+    };
+    ($fmt:expr, $($arg:tt)*) => {
+        {
+            use core::fmt::Write;
+
+            match $crate::semih::hio::hstdout()
+            .map(|mut hstdout| hstdout.write_fmt(format_args!(concat!($fmt, "\n"), $($arg)*)))
+            {
+                Ok(result) => result.map_err(|x| x.into()),
+                Err(err) => Err(err),
+            }
+        }
+    };
+}
+
 /// Macro to create a mutable reference to a statically allocated value
 ///
 /// This macro returns a value with type `Option<&'static mut $ty>`. `Some($expr)` will be returned

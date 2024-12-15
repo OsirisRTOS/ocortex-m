@@ -8,6 +8,11 @@ fn main() {
         println!("cargo:rustc-cfg=native");
     }
 
+    println!("cargo:rustc-check-cfg=cfg(thumb)");
+    if target.starts_with("thumbv") {
+        println!("cargo:rustc-cfg=thumb");
+    }
+
     if target.starts_with("thumbv6m-") {
         println!("cargo:rustc-cfg=cortex_m");
         println!("cargo:rustc-cfg=armv6m");

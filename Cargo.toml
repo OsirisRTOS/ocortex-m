@@ -29,6 +29,9 @@ cm7 = []
 cm7-r0p1 = ["cm7"]
 linker-plugin-lto = []
 std = []
+semih = []
+panic-semih = ["semih"]
+panic-itm = []
 
 [package.metadata.docs.rs]
 targets = [

@@ -41,8 +41,8 @@ macro_rules! pack_args {
 ///
 /// [semihosting operation]: https://developer.arm.com/documentation/dui0471/i/semihosting/semihosting-operations?lang=en
 #[inline(always)]
-pub unsafe fn semih_call<T>(nr: usize, arg: &T) -> usize {
-    semih_call_impl(nr, arg as *const T as usize)
+pub unsafe fn semih_call<T: ?Sized>(nr: usize, arg: &T) -> usize {
+    semih_call_impl(nr, arg as *const T as *const () as usize)
 }
 
 /// Performs a semihosting operation, takes one integer as an argument
@@ -59,7 +59,12 @@ pub unsafe fn semih_call_impl(_nr: usize, _arg: usize) -> usize {
             let mut nr = _nr as u32;
             let arg = _arg as u32;
             asm!("bkpt #0xab", inout("r0") nr, in("r1") arg, options(nostack, preserves_flags));
-            nr as usize
+
+            match nr as usize {
+                SEMIH_WRITE0 => 0,
+                SEMIH_WRITEC => 0,
+                x => x,
+            }
         }
         #[cfg(all(thumb, not(feature = "semih")))]
         () => 0,
