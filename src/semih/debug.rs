@@ -69,6 +69,6 @@ pub unsafe fn semih_call_impl(_nr: usize, _arg: usize) -> usize {
         #[cfg(all(thumb, not(feature = "semih")))]
         () => 0,
         #[cfg(not(thumb))]
-        () => unimplemented!(),
+        () => 0,
     }
 }

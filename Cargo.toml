@@ -32,6 +32,7 @@ std = []
 semih = []
 panic-semih = ["semih"]
 panic-itm = []
+panic-exit = []
 
 [package.metadata.docs.rs]
 targets = [
