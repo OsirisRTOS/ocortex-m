@@ -1,18 +1,31 @@
-//! Among
+//! Synchronization primitives.
+
 use core::cell::UnsafeCell;
 use core::mem::MaybeUninit;
-use core::sync::atomic::{AtomicBool, AtomicU8, Ordering};
+
+#[cfg(all(feature = "atomic-cas"))]
+use crate::atomic::AtomicBool;
+
+use crate::atomic::AtomicU8;
+use crate::atomic::Ordering;
 
 use crate::asm;
 
-#[cfg(all(feature = "multi-core", not(target_has_atomic = "ptr")))]
+#[cfg(all(
+    feature = "multi-core",
+    not(target_has_atomic = "8"),
+    not(feature = "atomic-cas")
+))]
 compile_error!(
-    "The `multi-core` feature requires atomic operations to be available on the target."
+    "The `multi-core` feature requires atomic-cas operations to be available on the target. Enable the `atomic-cas` feature."
 );
+
+#[cfg(all(not(feature = "atomic-cas"), not(cortex_m)))]
+compile_error!("This target is not supported.");
 
 /// A mutual exclusion primitive, facilitating busy-waiting.
 pub struct SpinLock {
-    #[cfg(all(feature = "multi-core"))]
+    #[cfg(all(feature = "atomic-cas"))]
     lock: AtomicBool,
 }
 
@@ -20,7 +33,7 @@ impl SpinLock {
     /// Creates a new SpinLock.
     pub const fn new() -> Self {
         SpinLock {
-            #[cfg(all(feature = "multi-core"))]
+            #[cfg(all(feature = "atomic-cas"))]
             lock: AtomicBool::new(false),
         }
     }
@@ -28,16 +41,22 @@ impl SpinLock {
     /// Waits until the SpinLock can be acquired and locks it.
     /// On a single-core system, this function only disables interrupts.
     pub fn lock(&self) {
-        #[cfg(all(feature = "multi-core"))]
+        #[cfg(all(feature = "atomic-cas"))]
         {
-            while self.lock.compare_and_swap(false, true, Ordering::Acquire) {
+            while self
+                .lock
+                .compare_exchange_weak(false, true, Ordering::Acquire, Ordering::Relaxed)
+                .is_err()
+            {
                 asm::nop();
             }
+            return;
         }
-        #[cfg(not(feature = "multi-core"))]
+        #[cfg(all(not(feature = "atomic-cas"), cortex_m))]
         {
             use crate::interrupt;
             interrupt::disable();
+            return;
         }
     }
 
@@ -45,16 +64,16 @@ impl SpinLock {
     /// Returns `true` if the lock was acquired.
     /// On a single-core system, this function only disables interrupts.
     pub fn try_lock(&self) -> bool {
-        #[cfg(all(feature = "multi-core"))]
+        #[cfg(all(feature = "atomic-cas"))]
         {
-            !self.lock.swap(true, Ordering::Acquire)
+            return !self.lock.swap(true, Ordering::Acquire);
         }
 
-        #[cfg(not(feature = "multi-core"))]
+        #[cfg(all(not(feature = "atomic-cas"), cortex_m))]
         {
             use crate::interrupt;
             interrupt::disable();
-            true
+            return true;
         }
     }
 
@@ -66,15 +85,15 @@ impl SpinLock {
     /// Precondition: The SpinLock must be locked by the current thread.
     /// Postcondition: The SpinLock is unlocked.
     pub unsafe fn unlock(&self) {
-        #[cfg(all(feature = "multi-core"))]
+        #[cfg(all(feature = "atomic-cas"))]
         {
-            self.lock.store(false, Ordering::Release);
+            return self.lock.store(false, Ordering::Release);
         }
 
-        #[cfg(not(feature = "multi-core"))]
+        #[cfg(all(not(feature = "atomic-cas"), cortex_m))]
         {
             use crate::interrupt;
-            unsafe { interrupt::enable() };
+            return unsafe { interrupt::enable() };
         }
     }
 }
@@ -96,7 +115,7 @@ impl Ready {
 
     /// Initializes a new Ready.
     pub const fn new() -> Self {
-        Ready {
+        Self {
             ready: AtomicU8::new(0),
         }
     }
@@ -107,15 +126,16 @@ impl Ready {
     }
 
     /// Move the Ready to state `to` if it is in state `from`.
-    fn forward(&self, from: u8, to: u8) -> bool {
-        self.ready
-            .compare_exchange_weak(from, to, Ordering::AcqRel, Ordering::Acquire)
-            .is_ok()
+    fn forward(&self, _from: u8, _to: u8) -> bool {
+        return self
+            .ready
+            .compare_exchange(_from, _to, Ordering::AcqRel, Ordering::Acquire)
+            .is_ok();
     }
 
     /// Returns true if the value is ready.
     pub fn is(&self) -> bool {
-        self.ready.load(Ordering::Acquire) == Self::READY
+        return self.ready.load(Ordering::Acquire) == Self::READY;
     }
 }
 

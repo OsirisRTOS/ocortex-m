@@ -57,6 +57,7 @@
 mod macros;
 
 pub mod asm;
+pub mod atomic;
 #[cfg(armv8m)]
 pub mod cmse;
 pub mod delay;

@@ -29,10 +29,15 @@ cm7 = []
 cm7-r0p1 = ["cm7"]
 linker-plugin-lto = []
 std = []
+
 semih = []
+
 panic-semih = ["semih"]
 panic-itm = []
 panic-exit = []
+
+atomic-cas = []
+multi-core = ["atomic-cas"]
 
 [package.metadata.docs.rs]
 targets = [
