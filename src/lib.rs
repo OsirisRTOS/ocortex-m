@@ -68,4 +68,5 @@ pub mod peripheral;
 pub mod register;
 #[allow(missing_docs)]
 pub mod semih;
+pub mod sync;
 pub mod volatile;

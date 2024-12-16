@@ -5,13 +5,19 @@
 
 use core::{ffi::CStr, fmt, slice};
 
-use crate::pack_args;
+use crate::{pack_args, sync::OnceCell};
 
 use super::{
     debug::{semih_call, SEMIH_OPEN, SEMIH_WRITE, SEMIH_WRITE0},
     open::{W_APPEND, W_TRUNC},
 };
 
+/// The host's standard output stream.
+static HSTDOUT: OnceCell<Result<HostStream, Error>> = OnceCell::new();
+/// The host's standard error stream.
+static HSTDERR: OnceCell<Result<HostStream, Error>> = OnceCell::new();
+
+#[derive(Debug, Clone, Copy)]
 pub enum Error {
     OpenFailed,
     FmtFailed(fmt::Error),
@@ -43,17 +49,17 @@ impl fmt::Write for HostStream {
 }
 
 /// Construct a new handle to the host's standard error.
-pub fn hstderr() -> Result<HostStream, Error> {
+pub fn hstderr() -> &'static Result<HostStream, Error> {
     // There is actually no stderr access in ARM Semihosting documentation. Use
     // convention used in libgloss.
     // See: libgloss/arm/syscalls.c, line 139.
     // https://sourceware.org/git/gitweb.cgi?p=newlib-cygwin.git;a=blob;f=libgloss/arm/syscalls.c#l139
-    open(":tt\0", W_APPEND)
+    HSTDERR.do_or_get(|| open(":tt\0", W_APPEND))
 }
 
 /// Construct a new handle to the host's standard output.
-pub fn hstdout() -> Result<HostStream, Error> {
-    open(":tt\0", W_TRUNC)
+pub fn hstdout() -> &'static Result<HostStream, Error> {
+    HSTDOUT.do_or_get(|| open(":tt\0", W_TRUNC))
 }
 
 fn open(name: &str, mode: usize) -> Result<HostStream, Error> {
