@@ -11,15 +11,6 @@ use crate::atomic::Ordering;
 
 use crate::asm;
 
-#[cfg(all(
-    feature = "multi-core",
-    not(target_has_atomic = "8"),
-    not(feature = "atomic-cas")
-))]
-compile_error!(
-    "The `multi-core` feature requires atomic-cas operations to be available on the target. Enable the `atomic-cas` feature."
-);
-
 #[cfg(all(not(feature = "atomic-cas"), not(cortex_m)))]
 compile_error!("This target is not supported.");
 
