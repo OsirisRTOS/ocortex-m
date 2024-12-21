@@ -39,6 +39,8 @@ panic-exit = []
 atomic-cas = []
 multi-core = ["atomic-cas"]
 
+jlink-quirks = []
+
 [package.metadata.docs.rs]
 targets = [
     "thumbv8m.main-none-eabihf",
@@ -49,3 +51,6 @@ targets = [
     "thumbv8m.base-none-eabi",
     "thumbv8m.main-none-eabi"
 ]
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(cortex_m)', 'cfg()'] }
