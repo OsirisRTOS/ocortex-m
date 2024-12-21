@@ -79,6 +79,7 @@ impl AtomicU8 {
         })
     }
 
+    ///fetch a value, apply the function and write back the modified value atomically
     pub fn fetch_update<F>(
         &self,
         _: Ordering,
@@ -88,19 +89,20 @@ impl AtomicU8 {
     where
         F: FnMut(u8) -> Option<u8> {
         use crate::interrupt;
-        interrupt::free(|| {
+        return interrupt::free(|| {
             // Safety:
             // 1. This is safe because we are on a single-core system, in an interrupt-free context.
             // 2. No reference to the value can be acquired outside of this type.
             let old = unsafe { *self.value.get() };
+            let mut f = f;
             let new = f(old);
             match new {
-                Some(new) => unsafe {
+                Some(new) => {
                     unsafe { *self.value.get() = new};
-                    Ok(old)
+                    return Ok(old)
                 },
                 None => {
-                    Err(old)
+                    return Err(old)
                 }
             }
         });
