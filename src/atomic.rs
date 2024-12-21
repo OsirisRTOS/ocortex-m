@@ -78,6 +78,33 @@ impl AtomicU8 {
             }
         })
     }
+
+    pub fn fetch_update<F>(
+        &self,
+        _: Ordering,
+        _: Ordering,
+        f: F,
+    ) -> Result<u8, u8>
+    where
+        F: FnMut(u8) -> Option<u8> {
+        use crate::interrupt;
+        interrupt::free(|| {
+            // Safety:
+            // 1. This is safe because we are on a single-core system, in an interrupt-free context.
+            // 2. No reference to the value can be acquired outside of this type.
+            let old = unsafe { *self.value.get() };
+            let new = f(old);
+            match new {
+                Some(new) => unsafe {
+                    unsafe { *self.value.get() = new};
+                    Ok(old)
+                },
+                None => {
+                    Err(old)
+                }
+            }
+        });
+    }
 }
 
 #[cfg(not(all(not(feature = "atomic-cas"), cortex_m)))]
