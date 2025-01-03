@@ -18,3 +18,16 @@ pub fn read() -> u32 {
 pub unsafe fn write(bits: u32) {
     asm!("mov lr, {}", in(reg) bits, options(nomem, nostack, preserves_flags));
 }
+
+#[macro_export]
+macro_rules! irq_is_msp {
+    () => {
+        {
+            let lr: u32;
+            unsafe { asm!("mov {}, lr", out(reg) lr, options(nostack, preserves_flags)) };
+            lr & 0x4 == 0
+        }
+    };
+}
+
+pub use irq_is_msp;

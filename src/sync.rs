@@ -87,6 +87,61 @@ impl SpinLock {
             return unsafe { interrupt::enable() };
         }
     }
+
+}
+
+pub struct SpinLockGuard<'a, T> {
+    lock: &'a SpinLock,
+    value: *mut T,
+}
+
+impl<'a, T> core::ops::Deref for SpinLockGuard<'a, T> {
+    type Target = T;
+
+    fn deref(&self) -> &T {
+        unsafe { &*self.value }
+    }
+}
+
+impl<'a, T> core::ops::DerefMut for SpinLockGuard<'a, T> {
+    fn deref_mut(&mut self) -> &mut T {
+        unsafe { &mut *self.value }
+    }
+}
+
+impl<'a, T> Drop for SpinLockGuard<'a, T> {
+    fn drop(&mut self) {
+        unsafe {
+            self.lock.unlock();
+        }
+    }
+}
+
+pub struct SpinLocked<T> {
+    lock: SpinLock,
+    value: UnsafeCell<T>,
+}
+
+impl<T> SpinLocked<T> {
+    pub fn new(value: T) -> Self {
+        SpinLocked {
+            lock: SpinLock::new(),
+            value: UnsafeCell::new(value),
+        }
+    }
+
+    pub fn lock(&self) -> SpinLockGuard<'_, T> {
+        self.lock.lock();
+        SpinLockGuard { lock: &self.lock, value: unsafe { &mut *self.value.get() } }
+    }
+
+    pub fn try_lock(&self) -> Option<SpinLockGuard<'_, T>> {
+        if self.lock.try_lock() {
+            Some(SpinLockGuard { lock: &self.lock, value: unsafe { &mut *self.value.get() } })
+        } else {
+            None
+        }
+    }
 }
 
 /// A synchronization primitive that can be used to block a thread until a value is ready.

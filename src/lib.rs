@@ -72,3 +72,4 @@ pub mod semih;
 pub mod sync;
 pub mod types;
 pub mod volatile;
+pub mod dispatcher;
