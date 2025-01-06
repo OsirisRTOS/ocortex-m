@@ -67,9 +67,9 @@ pub mod itm;
 pub mod panic;
 pub mod peripheral;
 pub mod register;
+pub mod sched;
 #[allow(missing_docs)]
 pub mod semih;
 pub mod sync;
 pub mod types;
 pub mod volatile;
-pub mod dispatcher;

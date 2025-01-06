@@ -19,6 +19,7 @@ pub unsafe fn write(bits: u32) {
     asm!("mov lr, {}", in(reg) bits, options(nomem, nostack, preserves_flags));
 }
 
+///
 #[macro_export]
 macro_rules! irq_is_msp {
     () => {

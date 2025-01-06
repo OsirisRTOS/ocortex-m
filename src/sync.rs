@@ -34,12 +34,18 @@ impl SpinLock {
     pub fn lock(&self) {
         #[cfg(all(feature = "atomic-cas"))]
         {
-            while self
-                .lock
-                .compare_exchange_weak(false, true, Ordering::Acquire, Ordering::Relaxed)
-                .is_err()
-            {
+            let lock = &self.lock;
+
+            if lock.load(Ordering::Relaxed) {
                 asm::nop();
+                //WTF, why is this here?
+            }
+
+            loop {
+                match lock.compare_exchange_weak(false, true, Ordering::SeqCst, Ordering::Relaxed) {
+                    Ok(_) => break,
+                    Err(_) => (),
+                }
             }
             return;
         }
@@ -87,9 +93,9 @@ impl SpinLock {
             return unsafe { interrupt::enable() };
         }
     }
-
 }
 
+/// A guard that releases the SpinLock when dropped.
 pub struct SpinLockGuard<'a, T> {
     lock: &'a SpinLock,
     value: *mut T,
@@ -117,27 +123,40 @@ impl<'a, T> Drop for SpinLockGuard<'a, T> {
     }
 }
 
+/// A mutual exclusion primitive that allows at most one thread to access a resource at a time.
 pub struct SpinLocked<T> {
     lock: SpinLock,
     value: UnsafeCell<T>,
 }
 
+unsafe impl<T> Sync for SpinLocked<T> {}
+
+/// Test
 impl<T> SpinLocked<T> {
-    pub fn new(value: T) -> Self {
+    /// Creates a new SpinLocked.
+    pub const fn new(value: T) -> Self {
         SpinLocked {
             lock: SpinLock::new(),
             value: UnsafeCell::new(value),
         }
     }
 
+    /// Locks the SpinLocked and returns a guard that releases the lock when dropped.
     pub fn lock(&self) -> SpinLockGuard<'_, T> {
         self.lock.lock();
-        SpinLockGuard { lock: &self.lock, value: unsafe { &mut *self.value.get() } }
+        SpinLockGuard {
+            lock: &self.lock,
+            value: unsafe { &mut *self.value.get() },
+        }
     }
 
+    /// Tries to lock the SpinLocked and returns a guard that releases the lock when dropped.
     pub fn try_lock(&self) -> Option<SpinLockGuard<'_, T>> {
         if self.lock.try_lock() {
-            Some(SpinLockGuard { lock: &self.lock, value: unsafe { &mut *self.value.get() } })
+            Some(SpinLockGuard {
+                lock: &self.lock,
+                value: unsafe { &mut *self.value.get() },
+            })
         } else {
             None
         }
