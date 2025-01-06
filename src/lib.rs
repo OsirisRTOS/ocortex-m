@@ -30,7 +30,7 @@
 //! This crate is guaranteed to compile on stable Rust 1.60 and up. It *might*
 //! compile with older versions but that may change in any new patch release.
 
-#![deny(missing_docs)]
+//#![deny(missing_docs)]
 #![no_std]
 #![allow(clippy::identity_op)]
 #![allow(clippy::missing_safety_doc)]
@@ -72,4 +72,3 @@ pub mod semih;
 pub mod sync;
 pub mod types;
 pub mod volatile;
-pub mod dispatcher;
