@@ -3,9 +3,25 @@
 /// Type: CtxPtr
 pub type CtxPtr = *const u32;
 
+/// Struct: ThreadDesc
+pub struct ThreadDesc {
+    /// The number of arguments passed to the thread.
+    pub argc: usize,
+
+    /// The arguments passed to the thread.
+    pub argv: *mut u8,
+
+    /// The finalizer function to call when the thread is done.
+    pub finalizer: fn(),
+
+    /// The entry point of the thread.
+    pub entry: fn(argc: usize, argv: *const *const u8),
+}
+
 /// Struct: ThreadContext
+#[derive(Debug, Clone, Copy)]
 pub struct ThreadContext {
-    ptr: Option<CtxPtr>,
+    ptr: CtxPtr,
 }
 
 impl ThreadContext {
@@ -18,45 +34,76 @@ impl ThreadContext {
     ///       r11, r10, r9, r8, r7, r6, r5, r4, r0, r1, r2, r3, r12, lr, pc, xpsr, (if fpu -> s16-31)
     /// Postcondition: A ThreadContext object is returned.
     pub unsafe fn new(ctx: CtxPtr) -> Self {
-        ThreadContext { ptr: Some(ctx) }
+        ThreadContext { ptr: ctx }
     }
 
-    /// Create an empty ThreadContext object.
-    pub fn empty() -> Self {
-        ThreadContext { ptr: None }
+    /// Function: from_empty
+    /// Precondition: stack is a valid pointer to the top of the stack of the thread.
+    ///    Especially stack must satisfy the following conditions:
+    ///   - The stack must be 4-byte aligned.
+    ///   - The stack must be empty.
+    ///   - The stack must be large enough to hold all the registers.
+    /// Postcondition: A ThreadContext object is returned.
+    ///   The stack is initialized with the default values for the registers.
+    ///   The stack pointer can be safely used as a return value for an exception handler.
+    pub unsafe fn from_empty(stack: *mut u8, desc: ThreadDesc) -> Self {
+        // The stack has to contain all the caller-saved registers.
+        // The layout is as follows:
+        // xPSR
+        // PC (entry point)
+        // LR (function to return after the thread is done)
+        // R12 (scratch register)
+        // R3 (argument to the function - 0)
+        // R2 (argument to the function - 0)
+        // R1 (argument to the function - argv)
+        // R0 (argument to the function - argc)
+
+        let stack = stack as *mut usize;
+        let mut stack = stack.byte_sub(size_of::<u32>() * 8);
+
+        // Set the xPSR register to the default value. (Only the thumb-state bit is set)
+        *stack = 1 << 24;
+
+        // Set the PC register to the entry point of the thread.
+        stack = stack.sub(1);
+        *stack = desc.entry as usize;
+
+        // Set the LR register to the function to return to after the thread is done.
+        stack = stack.sub(1);
+        *stack = desc.finalizer as usize;
+
+        // Set the R12 register to a scratch register.
+        stack = stack.sub(1);
+        *stack = 0;
+
+        // Set the R3 register to 0.
+        stack = stack.sub(1);
+        *stack = 0;
+
+        // Set the R1 register to 0.
+        stack = stack.sub(1);
+        *stack = 0;
+
+        // Set the R1 register to argv.
+        stack = stack.sub(1);
+        *stack = desc.argv as usize;
+
+        // Set the R0 register to argc.
+        stack = stack.sub(1);
+        *stack = desc.argc;
+
+        Self { ptr: stack as CtxPtr }
     }
 }
 
-/*
- * Function: dispatch
- * Precondition: ctx is a valid ThreadContext object.
- * Postcondition: The context is restored and the thread is resumed.
- */
-/*pub unsafe fn dispatch(ctx: &ThreadContext) -> ! {
-    // The layout of ptr is as follows:
-    // ptr[0] = r11, ptr[1] = r10, r9, r8, r7, r6, r5, r4, r0, r1, r2, r3, r12, lr, pc, xpsr
-    // We need to and lr with 0x4 to check which stack pointer to use.
-    let exec_return = unsafe { ctx.ptr.offset(13).read_volatile() };
-
-    if exec_return & 0x4 == 0 {
-        unsafe {
-            asm!("msr psp, {}", in(reg) ctx.ptr as u32, options(nostack, preserves_flags));
-            asm!("mrs r0, psp", "ldmia r0!, {r4-r11}", options(nomem, preserves_flags))
-        };
-    } else {
-        unsafe {
-            asm!("msr msp, {}", in(reg) ctx.ptr as u32, options(nomem, nostack, preserves_flags));
-            asm!("mrs r0, msp", "ldmia r0!, {r4-r11}", options(nomem, preserves_flags))
-        };
+impl From<CtxPtr> for ThreadContext {
+    fn from(ctx: CtxPtr) -> Self {
+        unsafe { ThreadContext::new(ctx) }
     }
+}
 
-    #[cfg(feature = "has_fpu")]
-    if exec_return & 0x10 != 0 {
-        unsafe { asm!("vldmia r0!, {s16-s31}", options(nomem, preserves_flags)) };
+impl From<ThreadContext> for CtxPtr {
+    fn from(ctx: ThreadContext) -> Self {
+        ctx.ptr
     }
-
-    unsafe {
-        asm!("mov lr, {}", in(reg) exec_return, options(nomem, nostack, preserves_flags));
-        asm!("bx lr", options(nomem, nostack, preserves_flags))
-    };
-}*/
+}
