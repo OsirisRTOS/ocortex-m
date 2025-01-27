@@ -1,8 +1,10 @@
 #![deny(warnings)]
 #![allow(missing_docs)]
 
+#[cfg(not(kani))]
 use core::panic::PanicInfo;
 
+#[cfg(not(kani))]
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
     #[cfg(all(feature = "panic-semih", target_arch = "arm"))]

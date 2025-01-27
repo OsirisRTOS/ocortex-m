@@ -1,5 +1,7 @@
 //! Module: sched
 
+use crate::{asm, peripheral, register};
+
 /// Type: CtxPtr
 pub type CtxPtr = *const u32;
 
@@ -9,13 +11,13 @@ pub struct ThreadDesc {
     pub argc: usize,
 
     /// The arguments passed to the thread.
-    pub argv: *mut u8,
+    pub argv: *const u8,
 
     /// The finalizer function to call when the thread is done.
-    pub finalizer: fn(),
+    pub finalizer: extern "C" fn(),
 
     /// The entry point of the thread.
-    pub entry: fn(argc: usize, argv: *const *const u8),
+    pub entry: extern "C" fn(argc: usize, argv: *const *const u8),
 }
 
 /// Struct: ThreadContext
@@ -57,6 +59,8 @@ impl ThreadContext {
         // R2 (argument to the function - 0)
         // R1 (argument to the function - argv)
         // R0 (argument to the function - argc)
+        // LR (EXEC_RETURN)
+        // R11 - R4 (scratch - 0)
 
         let stack = stack as *mut usize;
         let mut stack = stack.byte_sub(size_of::<u32>() * 8);
@@ -92,6 +96,16 @@ impl ThreadContext {
         stack = stack.sub(1);
         *stack = desc.argc;
 
+        // Set the LR register to return to thread and PSP.
+        stack = stack.sub(1);
+        *stack = 0xFFFFFFFD; 
+
+        // Set the remaining registers to 0.
+        for _ in 0..8 {
+            stack = stack.sub(1);
+            *stack = 0;
+        }
+
         Self { ptr: stack as CtxPtr }
     }
 }
@@ -106,4 +120,18 @@ impl From<ThreadContext> for CtxPtr {
     fn from(ctx: ThreadContext) -> Self {
         ctx.ptr
     }
+}
+
+/// Reschedule the tasks.
+pub fn reschedule() {
+    // Check privilege level.
+    if register::control::read().npriv() == register::control::Npriv::Unprivileged {
+        // The function is called from an unprivileged context.
+        // This is not allowed.
+        return;
+    }
+
+    // Call PendSV to reschedule the tasks.
+    peripheral::SCB::set_pendsv();
+    asm::isb();
 }
