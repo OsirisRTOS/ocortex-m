@@ -124,14 +124,6 @@ impl From<ThreadContext> for CtxPtr {
 
 /// Reschedule the tasks.
 pub fn reschedule() {
-    // Check privilege level.
-    if register::control::read().npriv() == register::control::Npriv::Unprivileged {
-        // The function is called from an unprivileged context.
-        // This is not allowed.
-        return;
-    }
-
     // Call PendSV to reschedule the tasks.
     peripheral::SCB::set_pendsv();
-    asm::isb();
 }

@@ -61,30 +61,36 @@ macro_rules! hprintln {
 }
 
 /// Macro for doing a system call.
+
 #[macro_export]
 macro_rules! syscall {
     ($num:expr) => {
         unsafe {
+            #[cfg(cortex_m)]
             asm!("svc {0}", $num);
         }
     };
     ($num:expr, $arg0:expr) => {
         unsafe {
+            #[cfg(cortex_m)]
             asm!("mov r0, {0}", "svc {1}", in(reg)$arg0, const $num);
         }
     };
     ($num:expr, $arg0:expr, arg1:expr) => {
         unsafe {
+            #[cfg(cortex_m)]
             asm!("mov r0, {0}", "mov r1, {1}", "svc {2}", in(reg)$arg0, in(reg)$arg1, const $num);
         }
     };
     ($num:expr, $arg0:expr, arg1:expr, arg2:expr) => {
         unsafe {
+            #[cfg(cortex_m)]
             asm!("mov r0, {0}", "mov r1, {1}", "mov r2, {2}", "svc {3}", in(reg)$arg0, in(reg)$arg1, in(reg)$arg2, const $num);
         }
     };
     ($num:expr, $arg0:expr, arg1:expr, arg2:expr, arg3:expr) => {
         unsafe {
+            #[cfg(cortex_m)]
             asm!("mov r0, {0}", "mov r1, {1}", "mov r2, {2}", "mov r3, {3}", "svc {4}", in(reg)$arg0, in(reg)$arg1, in(reg)$arg2, in(reg)$arg3, const $num);
         }
     };

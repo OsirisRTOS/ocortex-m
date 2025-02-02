@@ -31,7 +31,7 @@
 //! compile with older versions but that may change in any new patch release.
 
 #![deny(missing_docs)]
-#![no_std]
+#![cfg_attr(cortex_m, no_std)]
 #![allow(clippy::identity_op)]
 #![allow(clippy::missing_safety_doc)]
 // Prevent clippy from complaining about empty match expression that are used for cfg gating.
