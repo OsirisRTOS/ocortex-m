@@ -9,6 +9,8 @@ use crate::atomic::AtomicBool;
 use crate::atomic::AtomicU8;
 use crate::atomic::Ordering;
 
+use core::ptr::NonNull;
+
 use crate::asm;
 
 #[cfg(all(not(feature = "atomic-cas"), not(cortex_m)))]
@@ -96,26 +98,28 @@ impl SpinLock {
 }
 
 /// A guard that releases the SpinLock when dropped.
-pub struct SpinLockGuard<'a, T> {
+pub struct SpinLockGuard<'a, T: ?Sized + 'a> {
     lock: &'a SpinLock,
-    value: *mut T,
+    value: NonNull<T>,
+    marker: core::marker::PhantomData<&'a mut T>,
 }
 
-impl<'a, T> core::ops::Deref for SpinLockGuard<'a, T> {
+impl<T: ?Sized> core::ops::Deref for SpinLockGuard<'_, T> {
     type Target = T;
 
+    #[inline]
     fn deref(&self) -> &T {
-        unsafe { &*self.value }
+        unsafe { self.value.as_ref() }
     }
 }
 
-impl<'a, T> core::ops::DerefMut for SpinLockGuard<'a, T> {
+impl<T: ?Sized> core::ops::DerefMut for SpinLockGuard<'_, T> {
     fn deref_mut(&mut self) -> &mut T {
-        unsafe { &mut *self.value }
+        unsafe { self.value.as_mut() }
     }
 }
 
-impl<'a, T> Drop for SpinLockGuard<'a, T> {
+impl<T: ?Sized> Drop for SpinLockGuard<'_, T> {
     fn drop(&mut self) {
         unsafe {
             self.lock.unlock();
@@ -146,7 +150,8 @@ impl<T> SpinLocked<T> {
         self.lock.lock();
         SpinLockGuard {
             lock: &self.lock,
-            value: unsafe { &mut *self.value.get() },
+            value: unsafe { NonNull::new_unchecked(self.value.get()) },
+            marker: core::marker::PhantomData,
         }
     }
 
@@ -155,7 +160,8 @@ impl<T> SpinLocked<T> {
         if self.lock.try_lock() {
             Some(SpinLockGuard {
                 lock: &self.lock,
-                value: unsafe { &mut *self.value.get() },
+                value: unsafe { NonNull::new_unchecked(self.value.get()) },
+                marker: core::marker::PhantomData,
             })
         } else {
             None
