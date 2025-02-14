@@ -1,6 +1,6 @@
 //! Module: sched
 
-use crate::{asm, peripheral, register};
+use crate::peripheral;
 
 /// Type: CtxPtr
 pub type CtxPtr = *const u32;

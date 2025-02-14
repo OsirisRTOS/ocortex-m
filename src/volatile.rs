@@ -1,6 +1,6 @@
 //!------------------------------------------------------------------------------
-//! This is a copy of the vcell crate at: https://github.com/japaric/vcell
-//! as well as the volatile-register crate at: https://github.com/rust-embedded/volatile-register
+//! This is a copy of the vcell crate at: [https://github.com/japaric/vcell]()
+//! as well as the volatile-register crate at: [https://github.com/rust-embedded/volatile-register]()
 //! We decided to copy the code instead of adding a dependency to the crate because it is a small crate and we want to avoid adding dependencies to the project.
 //!------------------------------------------------------------------------------
 

@@ -98,7 +98,7 @@ impl SpinLock {
 }
 
 /// A guard that releases the SpinLock when dropped.
-pub struct SpinLockGuard<'a, T: ?Sized + 'a> {
+pub struct SpinLockGuard<'a, T: ?Sized> {
     lock: &'a SpinLock,
     value: NonNull<T>,
     marker: core::marker::PhantomData<&'a mut T>,
