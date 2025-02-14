@@ -3,8 +3,7 @@
 
 use core::panic::PanicInfo;
 
-#[panic_handler]
-fn panic(_info: &PanicInfo) -> ! {
+pub fn panic_handler(_info: &PanicInfo) -> ! {
     #[cfg(all(feature = "panic-semih", target_arch = "arm"))]
     {
         use crate::interrupt;

@@ -9,6 +9,8 @@ use crate::atomic::AtomicBool;
 use crate::atomic::AtomicU8;
 use crate::atomic::Ordering;
 
+use core::ptr::NonNull;
+
 use crate::asm;
 
 #[cfg(all(not(feature = "atomic-cas"), not(cortex_m)))]
@@ -34,12 +36,18 @@ impl SpinLock {
     pub fn lock(&self) {
         #[cfg(all(feature = "atomic-cas"))]
         {
-            while self
-                .lock
-                .compare_exchange_weak(false, true, Ordering::Acquire, Ordering::Relaxed)
-                .is_err()
-            {
+            let lock = &self.lock;
+
+            if lock.load(Ordering::Relaxed) {
                 asm::nop();
+                //WTF, why is this here?
+            }
+
+            loop {
+                match lock.compare_exchange_weak(false, true, Ordering::SeqCst, Ordering::Relaxed) {
+                    Ok(_) => break,
+                    Err(_) => (),
+                }
             }
             return;
         }
@@ -87,29 +95,31 @@ impl SpinLock {
             return unsafe { interrupt::enable() };
         }
     }
-
 }
 
-pub struct SpinLockGuard<'a, T> {
+/// A guard that releases the SpinLock when dropped.
+pub struct SpinLockGuard<'a, T: ?Sized> {
     lock: &'a SpinLock,
-    value: *mut T,
+    value: NonNull<T>,
+    marker: core::marker::PhantomData<&'a mut T>,
 }
 
-impl<'a, T> core::ops::Deref for SpinLockGuard<'a, T> {
+impl<T: ?Sized> core::ops::Deref for SpinLockGuard<'_, T> {
     type Target = T;
 
+    #[inline]
     fn deref(&self) -> &T {
-        unsafe { &*self.value }
+        unsafe { self.value.as_ref() }
     }
 }
 
-impl<'a, T> core::ops::DerefMut for SpinLockGuard<'a, T> {
+impl<T: ?Sized> core::ops::DerefMut for SpinLockGuard<'_, T> {
     fn deref_mut(&mut self) -> &mut T {
-        unsafe { &mut *self.value }
+        unsafe { self.value.as_mut() }
     }
 }
 
-impl<'a, T> Drop for SpinLockGuard<'a, T> {
+impl<T: ?Sized> Drop for SpinLockGuard<'_, T> {
     fn drop(&mut self) {
         unsafe {
             self.lock.unlock();
@@ -117,27 +127,42 @@ impl<'a, T> Drop for SpinLockGuard<'a, T> {
     }
 }
 
+/// A mutual exclusion primitive that allows at most one thread to access a resource at a time.
 pub struct SpinLocked<T> {
     lock: SpinLock,
     value: UnsafeCell<T>,
 }
 
+unsafe impl<T> Sync for SpinLocked<T> {}
+
+/// Test
 impl<T> SpinLocked<T> {
-    pub fn new(value: T) -> Self {
+    /// Creates a new SpinLocked.
+    pub const fn new(value: T) -> Self {
         SpinLocked {
             lock: SpinLock::new(),
             value: UnsafeCell::new(value),
         }
     }
 
+    /// Locks the SpinLocked and returns a guard that releases the lock when dropped.
     pub fn lock(&self) -> SpinLockGuard<'_, T> {
         self.lock.lock();
-        SpinLockGuard { lock: &self.lock, value: unsafe { &mut *self.value.get() } }
+        SpinLockGuard {
+            lock: &self.lock,
+            value: unsafe { NonNull::new_unchecked(self.value.get()) },
+            marker: core::marker::PhantomData,
+        }
     }
 
+    /// Tries to lock the SpinLocked and returns a guard that releases the lock when dropped.
     pub fn try_lock(&self) -> Option<SpinLockGuard<'_, T>> {
         if self.lock.try_lock() {
-            Some(SpinLockGuard { lock: &self.lock, value: unsafe { &mut *self.value.get() } })
+            Some(SpinLockGuard {
+                lock: &self.lock,
+                value: unsafe { NonNull::new_unchecked(self.value.get()) },
+                marker: core::marker::PhantomData,
+            })
         } else {
             None
         }

@@ -53,4 +53,4 @@ targets = [
 ]
 
 [lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(cortex_m)', 'cfg()'] }
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(cortex_m)', 'cfg(kani)'] }

@@ -414,6 +414,11 @@ unsafe impl Send for SYST {}
 impl SYST {
     /// Pointer to the register block
     pub const PTR: *const syst::RegisterBlock = 0xE000_E010 as *const _;
+
+    /// Create new instance.
+    pub fn new() -> Self {
+        Self { _marker: PhantomData::default() }
+    }
 }
 
 impl ops::Deref for SYST {

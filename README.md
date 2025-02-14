@@ -1,17 +1,7 @@
-[![crates.io](https://img.shields.io/crates/d/cortex-m.svg)](https://crates.io/crates/cortex-m)
-[![crates.io](https://img.shields.io/crates/v/cortex-m.svg)](https://crates.io/crates/cortex-m)
+# `ocortex-m`
 
-# `cortex-m`
-
-> Low level access to Cortex-M processors
-
-This project is developed and maintained by the [Cortex-M team][team].
-
-## [Documentation](https://docs.rs/crate/cortex-m)
-
-## Minimum Supported Rust Version (MSRV)
-
-This crate is guaranteed to compile on stable Rust 1.60.0 and up. It might compile with older versions but that may change in any new patch release.
+ocortex-m is a fork of the [cortex-m project](https://github.com/rust-embedded/cortex-m) which has been developed by the [Cortex-M team][team].  
+The OsirisRTOS Team has adapted the cortex-m project to fit the needs of Osiris.
 
 ## License
 
@@ -29,11 +19,4 @@ Unless you explicitly state otherwise, any contribution intentionally submitted 
 work by you, as defined in the Apache-2.0 license, shall be dual licensed as above, without any
 additional terms or conditions.
 
-## Code of Conduct
-
-Contribution to this crate is organized under the terms of the [Rust Code of
-Conduct][CoC], the maintainer of this crate, the [Cortex-M team][team], promises
-to intervene to uphold that code of conduct.
-
-[CoC]: CODE_OF_CONDUCT.md
 [team]: https://github.com/rust-embedded/wg#the-cortex-m-team

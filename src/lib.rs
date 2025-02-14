@@ -30,8 +30,8 @@
 //! This crate is guaranteed to compile on stable Rust 1.60 and up. It *might*
 //! compile with older versions but that may change in any new patch release.
 
-//#![deny(missing_docs)]
-#![no_std]
+#![deny(missing_docs)]
+#![cfg_attr(cortex_m, no_std)]
 #![allow(clippy::identity_op)]
 #![allow(clippy::missing_safety_doc)]
 // Prevent clippy from complaining about empty match expression that are used for cfg gating.
@@ -67,6 +67,7 @@ pub mod itm;
 pub mod panic;
 pub mod peripheral;
 pub mod register;
+pub mod sched;
 #[allow(missing_docs)]
 pub mod semih;
 pub mod sync;
