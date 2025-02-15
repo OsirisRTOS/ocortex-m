@@ -339,6 +339,7 @@ impl SCB {
         crate::asm::isb();
 
         // Enable I-cache
+        #[cfg(cortex_m)]
         unsafe {
             asm!(
                 "ldr r0, =0xE000ED14",
@@ -420,6 +421,7 @@ impl SCB {
         crate::asm::isb();
 
         // Now turn on the D-cache
+        #[cfg(cortex_m)]
         unsafe {
             asm!(
                 "ldr r0, =0xE000ED14",
