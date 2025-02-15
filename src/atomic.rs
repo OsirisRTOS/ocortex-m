@@ -80,14 +80,10 @@ impl AtomicU8 {
     }
 
     ///fetch a value, apply the function and write back the modified value atomically
-    pub fn fetch_update<F>(
-        &self,
-        _: Ordering,
-        _: Ordering,
-        f: F,
-    ) -> Result<u8, u8>
+    pub fn fetch_update<F>(&self, _: Ordering, _: Ordering, f: F) -> Result<u8, u8>
     where
-        F: FnMut(u8) -> Option<u8> {
+        F: FnMut(u8) -> Option<u8>,
+    {
         use crate::interrupt;
         return interrupt::free(|| {
             // Safety:
@@ -98,12 +94,10 @@ impl AtomicU8 {
             let new = f(old);
             match new {
                 Some(new) => {
-                    unsafe { *self.value.get() = new};
-                    return Ok(old)
-                },
-                None => {
-                    return Err(old)
+                    unsafe { *self.value.get() = new };
+                    return Ok(old);
                 }
+                None => return Err(old),
             }
         });
     }

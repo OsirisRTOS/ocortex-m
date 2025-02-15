@@ -98,7 +98,7 @@ impl ThreadContext {
 
         // Set the LR register to return to thread and PSP.
         stack = stack.sub(1);
-        *stack = 0xFFFFFFFD; 
+        *stack = 0xFFFFFFFD;
 
         // Set the remaining registers to 0.
         for _ in 0..8 {
@@ -106,7 +106,9 @@ impl ThreadContext {
             *stack = 0;
         }
 
-        Self { ptr: stack as CtxPtr }
+        Self {
+            ptr: stack as CtxPtr,
+        }
     }
 }
 

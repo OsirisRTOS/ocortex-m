@@ -417,7 +417,9 @@ impl SYST {
 
     /// Create new instance.
     pub fn new() -> Self {
-        Self { _marker: PhantomData::default() }
+        Self {
+            _marker: PhantomData::default(),
+        }
     }
 }
 
