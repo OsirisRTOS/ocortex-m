@@ -1,5 +1,6 @@
 //! System Control Block
 
+use core::arch::asm;
 use core::ptr;
 
 use crate::volatile::RW;
@@ -334,17 +335,23 @@ impl SCB {
         // Invalidate I-cache
         cbp.iciallu();
 
-        // Enable I-cache
-        extern "C" {
-            // see asm-v7m.s
-            fn __enable_icache();
-        }
+        crate::asm::dsb();
+        crate::asm::isb();
 
-        // NOTE(unsafe): The asm routine manages exclusive access to the SCB
-        // registers and applies the proper barriers; it is technically safe on
-        // its own, and is only `unsafe` here because it's `extern "C"`.
+        // Enable I-cache
         unsafe {
-            __enable_icache();
+            asm!(
+                "ldr r0, =0xE000ED14",
+                "msr r2, PRIMASK",
+                "cpsid i",
+                "ldr r1, [r0]",
+                "orr r1, r1, #(1 << 17)",
+                "str r1, [r0]",
+                "dsb",
+                "isb",
+                "msr PRIMASK, r2",
+                clobber_abi("C")
+            );
         }
     }
 
@@ -409,17 +416,23 @@ impl SCB {
         // Invalidate anything currently in the D-cache
         unsafe { self.invalidate_dcache(cpuid) };
 
-        // Now turn on the D-cache
-        extern "C" {
-            // see asm-v7m.s
-            fn __enable_dcache();
-        }
+        crate::asm::dsb();
+        crate::asm::isb();
 
-        // NOTE(unsafe): The asm routine manages exclusive access to the SCB
-        // registers and applies the proper barriers; it is technically safe on
-        // its own, and is only `unsafe` here because it's `extern "C"`.
+        // Now turn on the D-cache
         unsafe {
-            __enable_dcache();
+            asm!(
+                "ldr r0, =0xE000ED14",
+                "msr r2, PRIMASK",
+                "cpsid i",
+                "ldr r1, [r0]",
+                "orr r1, r1, #(1 << 16)",
+                "str r1, [r0]",
+                "dsb",
+                "isb",
+                "msr PRIMASK, r2",
+                clobber_abi("C")
+            );
         }
     }
 
