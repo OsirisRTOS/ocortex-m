@@ -7,7 +7,7 @@ compile_error!(
 
 #[cfg(all(not(feature = "atomic-cas"), not(target_has_atomic = "8")))]
 compile_error!(
-    "The `atomic-case` feature requires the target to have atomic operations on at least 8-bit integers."
+    "The `atomic-cas` feature requires the target to have atomic operations on at least 8-bit integers."
 );
 
 // ----------------------------AtomicU8----------------------------

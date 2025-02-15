@@ -343,7 +343,7 @@ impl SCB {
         unsafe {
             asm!(
                 "ldr r0, =0xE000ED14",
-                "msr r2, PRIMASK",
+                "mrs r2, PRIMASK",
                 "cpsid i",
                 "ldr r1, [r0]",
                 "orr r1, r1, #(1 << 17)",
@@ -425,7 +425,7 @@ impl SCB {
         unsafe {
             asm!(
                 "ldr r0, =0xE000ED14",
-                "msr r2, PRIMASK",
+                "mrs r2, PRIMASK",
                 "cpsid i",
                 "ldr r1, [r0]",
                 "orr r1, r1, #(1 << 16)",

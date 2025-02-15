@@ -1,24 +1,15 @@
 //! Synchronization primitives.
 
-use core::cell::UnsafeCell;
-use core::mem::MaybeUninit;
-
-#[cfg(all(feature = "atomic-cas"))]
+use crate::asm;
 use crate::atomic::AtomicBool;
-
 use crate::atomic::AtomicU8;
 use crate::atomic::Ordering;
-
+use core::cell::UnsafeCell;
+use core::mem::MaybeUninit;
 use core::ptr::NonNull;
-
-use crate::asm;
-
-#[cfg(all(not(feature = "atomic-cas"), not(cortex_m)))]
-compile_error!("This target is not supported.");
 
 /// A mutual exclusion primitive, facilitating busy-waiting.
 pub struct SpinLock {
-    #[cfg(all(feature = "atomic-cas"))]
     lock: AtomicBool,
 }
 
@@ -26,74 +17,41 @@ impl SpinLock {
     /// Creates a new SpinLock.
     pub const fn new() -> Self {
         SpinLock {
-            #[cfg(all(feature = "atomic-cas"))]
             lock: AtomicBool::new(false),
         }
     }
 
     /// Waits until the SpinLock can be acquired and locks it.
-    /// On a single-core system, this function only disables interrupts.
     pub fn lock(&self) {
-        #[cfg(all(feature = "atomic-cas"))]
-        {
-            let lock = &self.lock;
+        let lock = &self.lock;
 
-            if lock.load(Ordering::Relaxed) {
-                asm::nop();
-                //WTF, why is this here?
-            }
+        if lock.load(Ordering::Relaxed) {
+            asm::nop();
+        }
 
-            loop {
-                match lock.compare_exchange_weak(false, true, Ordering::SeqCst, Ordering::Relaxed) {
-                    Ok(_) => break,
-                    Err(_) => (),
-                }
+        loop {
+            match lock.compare_exchange_weak(false, true, Ordering::SeqCst, Ordering::Relaxed) {
+                Ok(_) => break,
+                Err(_) => (),
             }
-            return;
         }
-        #[cfg(all(not(feature = "atomic-cas"), cortex_m))]
-        {
-            use crate::interrupt;
-            interrupt::disable();
-            return;
-        }
+        return;
     }
 
     /// Tries to lock the SpinLock.
     /// Returns `true` if the lock was acquired.
-    /// On a single-core system, this function only disables interrupts.
     pub fn try_lock(&self) -> bool {
-        #[cfg(all(feature = "atomic-cas"))]
-        {
-            return !self.lock.swap(true, Ordering::Acquire);
-        }
-
-        #[cfg(all(not(feature = "atomic-cas"), cortex_m))]
-        {
-            use crate::interrupt;
-            interrupt::disable();
-            return true;
-        }
+        return !self.lock.swap(true, Ordering::Acquire);
     }
 
     /// Unlocks the SpinLock.
-    /// On a single-core system, this function only enables interrupts.
     /// Returns `true` if the lock was released.
     ///
     /// # Safety
     /// Precondition: The SpinLock must be locked by the current thread.
     /// Postcondition: The SpinLock is unlocked.
     pub unsafe fn unlock(&self) {
-        #[cfg(all(feature = "atomic-cas"))]
-        {
-            return self.lock.store(false, Ordering::Release);
-        }
-
-        #[cfg(all(not(feature = "atomic-cas"), cortex_m))]
-        {
-            use crate::interrupt;
-            return unsafe { interrupt::enable() };
-        }
+        return self.lock.store(false, Ordering::Release);
     }
 }
 
